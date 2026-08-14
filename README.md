@@ -44,6 +44,12 @@ Customers grouped into `1 order` / `2–5 orders` / `6–10 orders` / `11+ order
 | 6–10 orders |	5 |	7.00 |	2769.57 |
 | 11 and more orders |	1 |	15.00 |	1244.80 |
 
+Segmentation analysis revealed the following patterns:
+
+1. The vast majority of customers placed only one order.
+2. As the frequency of purchases increases, the size of the segment decreases. There is virtually no loyal customer base.
+3. Customers with a single order tend to purchase more expensive items, while the few loyal customers tend to switch to smaller, less expensive purchases.
+
 **2. Top spenders ranking**
 Customers with 3+ orders, ranked by average order value — top 15.
 
@@ -65,6 +71,9 @@ Customers with 3+ orders, ranked by average order value — top 15.
 | e30b83af13d6ff0b0f427b2a67c43b39 | 3 | 5558.33 |
 | 3de0c9303f39b7ccfe69ca11aee19cc6 | 3 | 5526.67 |
 
+The vast majority of users in the ranking (13 out of 15) fall at the very lower end of the filter (3 orders).
+This top list confirms the conclusion that buyers are focused on infrequent and expensive purchases rather than everyday and regular ones.
+
 **3. Regional breakdown**
 Per region: customer & order counts, avg order cost, installment share, promo share, cancellation share.
 
@@ -73,6 +82,12 @@ Per region: customer & order counts, avg order cost, installment share, promo sh
 | Мoscow | 39386 | 40747 | 3140.14 | 0.48 |	0.04 | 0.01 |
 | Novosibirsk Oblast | 11044 |	11401 |	3491.79 |	0.54 |	0.04 |	0.00 |
 | Saint Petersburg |	11978 |	12414 |	3593.46 |	0.55 |	0.04 |	0.01 |
+
+An analysis by region revealed the following trends:
+
+1. Moscow leads in terms of the number of users. However, it also has the lowest average transaction value.
+2. Customers from St. Petersburg and the Novosibirsk Region are significantly more likely to make purchases on an installment plan.
+3. The percentage of promo code usage and the share of users with cancellations are consistently low across all regions.
 
 **4. 2023 monthly cohorts by first-order month**
 Per cohort: customer & order counts, avg order cost, avg rating, money-transfer share, avg customer lifetime.
@@ -91,6 +106,10 @@ Per cohort: customer & order counts, avg order cost, avg rating, money-transfer 
 | 2023-10-01 |	2832 |	2954 |	3228.78 |	4.20 |	0.21 |	3 |
 | 2023-11-01 |	4703 |	4892 |	3168.63 |	4.00 |	0.19 |	2 |
 | 2023-12-01 |	3589 |	3696 |	3164.07 |	4.08 |	0.20 |	2 |
+
+There is a peak in new user growth in November.
+Regardless of the month of registration, the proportion of users who use money transfers for their first payment is low.
+As expected, the average time spent active decreases from older customers to newer ones.
 
 ## Tech Stack
 PostgreSQL — CTEs, conditional aggregation
