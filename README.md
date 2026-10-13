@@ -14,10 +14,10 @@ The original data consists of a relational database with 5 main tables: `orders`
 
 ```mermaid
 erDiagram
-    users ||--o{ orders : "имеет"
-    orders ||--o{ order_items : "включает"
-    orders ||--o{ order_payments : "оплачивается"
-    orders ||--o{ order_reviews : "получает отзывы"
+    users ||--o{ orders : "has"
+    orders ||--o{ order_items : "includes"
+    orders ||--o{ order_payments : "is paid for"
+    orders ||--o{ order_reviews : "receives"
 
     users {
         varchar(255) buyer_id PK
