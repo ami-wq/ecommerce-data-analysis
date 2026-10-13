@@ -1,135 +1,89 @@
-# Customer Data Mart & Ad Hoc Analysis for an E-Commerce Marketplace
+# E-Commerce Customer Data Mart & Analytics
 
-SQL project focused on customer ordering behavior in an e-commerce marketplace.
+**TL;DR:** This project builds a centralized SQL data mart (`product_user_features`) for an expanding marketplace to lay the groundwork for future ML models. Each row of the resulting data mart represents a unique **(customer, region)** pair. **Key takeaway:** While Moscow drives the highest user volume, regional customers (St. Petersburg, Novosibirsk) demonstrate higher Average Order Values (AOV) and a 14% higher likelihood to use installment payments.
 
-The project combines **customer-level data mart development** with **ad hoc business analysis** covering customer segmentation, high-value purchases, regional differences, and monthly cohorts.
+## 🎯 The Challenge
+As the "VseTut" marketplace scaled, raw transactional data outgrew simple analytical queries. The business needed a consolidated, 360-degree view of its most active customers to launch personalized marketing and predict churn. 
+My goal was to design and populate a user-feature data mart using SQL, and perform ad-hoc analysis to uncover immediate behavioral insights about our core audience.
 
-## Overview
+## 🗂️ The Data
+The original data consists of a relational database with 5 main tables: `orders`, `order_items`, `order_payments`, `order_reviews`, and `users`. 
+* **Volume:** 99,441 orders covering 32,951 unique products.
+* **Period:** September 2022 – October 2024 (Full data available for Jan 2023 – Aug 2024).
+* **Constraints & Privacy:** This is an educational dataset provided as part of the course. No sensitive PII (Personally Identifiable Information) is exposed. The raw datasets are intentionally excluded to maintain data privacy.
 
-The analysis was performed on a closed educational dataset provided as part of a data science course.
+```mermaid
+erDiagram
+    users ||--o{ orders : "имеет"
+    orders ||--o{ order_items : "включает"
+    orders ||--o{ order_payments : "оплачивается"
+    orders ||--o{ order_reviews : "получает отзывы"
 
-Two business rules define the scope of the analysis:
+    users {
+        varchar buyer_id PK
+        varchar user_id
+        varchar zip_code_prefix
+        varchar region
+    }
 
-* Only orders with status **Delivered** or **Canceled** are included.
-* The data mart is limited to the **3 regions with the highest order volume**.
+    orders {
+        varchar order_id PK
+        varchar buyer_id FK
+        varchar order_status
+        timestamp order_purchase_ts
+        timestamp order_approved_at
+        timestamp order_delivered_carrier_ts
+        timestamp order_delivered_ts
+        timestamp order_estimated_delivery_dt
+    }
 
-Each row of the resulting data mart represents a unique **(customer, region)** pair. A customer active in multiple top-3 regions therefore appears once per region.
+    order_items {
+        varchar order_id PK FK
+        int order_item_id PK
+        varchar product_id
+        varchar seller_id
+        timestamp shipping_limit_date
+        numeric price
+        numeric delivery_cost
+    }
 
-## Key Findings
+    order_payments {
+        varchar order_id PK FK
+        int payment_sequential PK
+        varchar payment_type
+        int payment_installments
+    }
 
-* The vast majority of customers placed only **one order**, while repeat customers represent a very small share of the dataset.
-* Among customers with 3+ orders, most of the customers with the highest average order values are concentrated near the minimum threshold of **3 orders**.
-* **Moscow** has the largest customer base but the **lowest average order value** among the three analyzed regions.
-* Customers from **Saint Petersburg** and **Novosibirsk Oblast** use installment payments more frequently than customers from Moscow.
-* **November 2023** shows the strongest increase in the number of new customers.
-* The share of customers using money transfers as their first payment method remains relatively stable across cohorts, at around **20%**.
+    order_reviews {
+        varchar review_id PK
+        varchar order_id PK FK
+        int review_score
+        timestamp review_creation_date
+        timestamp review_answer_timestamp
+    }
+```
 
-## Data Mart
+## 🛠️ Methodology & Data Processing
+I applied several critical business filters and transformations:
+* **Region Filtering:** The dataset spans 27 regions, but the data is heavily skewed. I filtered the mart to only include the Top-3 most active regions (Moscow, St. Petersburg, Novosibirsk), which account for ~66% of the total customer base.
+* **Status Filtering:** Excluded orders in transit or processing. Only `Delivered` and `Canceled` orders were included.
+* **Aggregation:** Transformed transactional rows into a user-centric view, calculating metrics like `lifetime`, `canceled_orders_ratio`, and `avg_order_cost` per user-region pair.
 
-The project produces the `product_user_features` data mart.
+## 💡 Key Findings
 
-| Column                   | Description                                                               |
-| ------------------------ | ------------------------------------------------------------------------- |
-| `user_id`                | Unique customer identifier                                                |
-| `region`                 | Region the order was placed from                                          |
-| `first_order_ts`         | Timestamp of the customer's first order                                   |
-| `last_order_ts`          | Timestamp of the customer's last order                                    |
-| `lifetime`               | Days between first and last order                                         |
-| `total_orders`           | Total number of orders                                                    |
-| `avg_order_rating`       | Average rating given by the customer                                      |
-| `num_orders_with_rating` | Number of rated orders                                                    |
-| `num_canceled_orders`    | Number of canceled orders                                                 |
-| `canceled_orders_ratio`  | Share of canceled orders                                                  |
-| `total_order_costs`      | Total value of delivered orders                                           |
-| `avg_order_cost`         | Average order value                                                       |
-| `num_installment_orders` | Number of orders paid in installments                                     |
-| `num_orders_with_promo`  | Number of orders paid using a promo code                                  |
-| `used_money_transfer`    | Whether the customer ever used money transfer as the first payment method |
-| `used_installments`      | Whether the customer ever paid in installments                            |
-| `used_cancel`            | Whether the customer ever canceled an order                               |
+1. **One-Time Buyers Drive High AOV:** 
+   The customer base is heavily skewed towards one-time purchases (60,468 users). Surprisingly, as order frequency increases, the AOV drops. Single-order customers have an AOV of **3,305 RUB**, while highly active users (11+ orders) average only **1,244 RUB**.
 
-## Ad Hoc Analysis
+2. **Top Spenders Cluster at the 3-Order Mark:**
+   When ranking users with 3+ orders by AOV, 13 out of the top 15 highest-spending customers placed exactly 3 orders (with AOVs reaching up to 14,716 RUB). High check amounts do not correlate with high purchase frequency.
 
-### 1. Customer Segmentation by Order Frequency
+3. **Regional Purchasing Habits Differ:**
+   * **Moscow** has the largest customer base (39,386) but the lowest AOV (3,140 RUB).
+   * **St. Petersburg** leads in AOV (3,593 RUB) and installment usage (55% vs Moscow's 48%).
 
-Customers were divided into four groups:
+4. **Acquisition Spikes in November:**
+   Monthly cohort analysis (based on the first order in 2023) revealed a massive spike in user acquisition in **November 2023** (4,703 new customers). Meanwhile, payment preferences remain stable: ~20% of users consistently choose money transfers as their first payment method across all cohorts.
 
-* `1 order`
-* `2–5 orders`
-* `6–10 orders`
-* `11+ orders`
+## 💻 Stack
 
-| Segment     | Customers | Avg. Orders | Avg. Order Value |
-| ----------- | --------: | ----------: | ---------------: |
-| 1 order     |    60,468 |        1.00 |         3,305.66 |
-| 2–5 orders  |     1,934 |        2.09 |         3,058.39 |
-| 6–10 orders |         5 |        7.00 |         2,769.57 |
-| 11+ orders  |         1 |       15.00 |         1,244.80 |
-
-The dataset is strongly concentrated around one-time purchases. As order frequency increases, the customer segment becomes dramatically smaller.
-
-At the same time, customers with fewer orders tend to have a higher average order value, while the small group of highly active customers tends to make less expensive purchases.
-
-### 2. Customers with the Highest Average Order Value
-
-Customers with at least 3 orders were ranked by `avg_order_cost`.
-
-| User                               | Orders | Avg. Order Value |
-| ---------------------------------- | -----: | ---------------: |
-| `1da09dd64e235e7c2f29a4faff33535c` |      3 |        14,716.67 |
-| `297ec5afd18366f5ba27520cc4954151` |      3 |        12,478.33 |
-| `cef29e793e232d30250331804cdb7000` |      3 |        11,518.33 |
-| `397b44d5bb99eabf54ea9c2b41ebb905` |      4 |        10,928.25 |
-| `d132b863416f85f2abb1a988ca05dd12` |      3 |         9,704.67 |
-
-The ranking is heavily concentrated near the lower bound of the filter: **13 of the top 15 customers placed exactly 3 orders**.
-
-This suggests that high average order value is not necessarily associated with high purchase frequency in the analyzed dataset.
-
-### 3. Regional Analysis
-
-| Region             | Customers | Orders | Avg. Order Value | Installment Share | Promo Share | Cancellation Share |
-| ------------------ | --------: | -----: | ---------------: | ----------------: | ----------: | -----------------: |
-| Moscow             |    39,386 | 40,747 |         3,140.14 |               48% |          4% |                 1% |
-| Novosibirsk Oblast |    11,044 | 11,401 |         3,491.79 |               54% |          4% |                 0% |
-| Saint Petersburg   |    11,978 | 12,414 |         3,593.46 |               55% |          4% |                 1% |
-
-Key observations:
-
-* Moscow has the largest customer base but the lowest average order value.
-* Installment usage is higher in Saint Petersburg and Novosibirsk Oblast.
-* Promo-code usage remains consistently low across all three regions.
-* Cancellation shares are also low and show little variation between regions.
-
-### 4. Monthly Cohort Analysis
-
-Customers were grouped by their **first-order month in 2023**.
-
-| Cohort Month | Customers | Orders | Avg. Order Value | Avg. Rating | Money Transfer Share | Avg. Lifetime |
-| ------------ | --------: | -----: | ---------------: | ----------: | -------------------: | ------------: |
-| Jan          |       465 |    499 |         2,865.79 |        4.18 |                  21% |       12 days |
-| Feb          |     1,063 |  1,115 |         2,556.01 |        4.17 |                  22% |        7 days |
-| Mar          |     1,663 |  1,762 |         2,764.68 |        4.19 |                  21% |        8 days |
-| Apr          |     1,435 |  1,511 |         3,144.97 |        4.14 |                  19% |        7 days |
-| May          |     2,197 |  2,322 |         2,775.32 |        4.22 |                  20% |        7 days |
-| Jun          |     1,985 |  2,107 |         2,916.85 |        4.19 |                  20% |        7 days |
-| Jul          |     2,463 |  2,604 |         2,767.91 |        4.22 |                  21% |        6 days |
-| Aug          |     2,595 |  2,742 |         2,822.22 |        4.32 |                  20% |        5 days |
-| Sep          |     2,591 |  2,737 |         3,263.46 |        4.27 |                  21% |        5 days |
-| Oct          |     2,832 |  2,954 |         3,228.78 |        4.20 |                  21% |        3 days |
-| Nov          |     4,703 |  4,892 |         3,168.63 |        4.00 |                  19% |        2 days |
-| Dec          |     3,589 |  3,696 |         3,164.07 |        4.08 |                  20% |        2 days |
-
-November had the highest number of new customers in the analyzed period.
-
-The share of users whose first payment was made via money transfer remained relatively stable across cohorts, while average lifetime naturally decreases for more recent cohorts because they have had less time to remain active.
-
-## Tech Stack
-
-**PostgreSQL** · **SQL** · **Data Analysis**
-
-## Data & Reproducibility
-
-The project uses a **closed educational dataset** provided as part of the course.
-
-The source database cannot be published or redistributed, so the repository contains the SQL analysis and documentation, but not the original data.
+**SQL (PostgreSQL)**
