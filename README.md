@@ -20,16 +20,16 @@ erDiagram
     orders ||--o{ order_reviews : "получает отзывы"
 
     users {
-        varchar buyer_id PK
-        varchar user_id
-        varchar zip_code_prefix
-        varchar region
+        varchar(255) buyer_id PK
+        varchar(255) user_id
+        varchar(6) zip_code_prefix
+        varchar(255) region
     }
 
     orders {
-        varchar order_id PK
-        varchar buyer_id FK
-        varchar order_status
+        varchar(255) order_id PK
+        varchar(255) buyer_id FK
+        varchar(50) order_status
         timestamp order_purchase_ts
         timestamp order_approved_at
         timestamp order_delivered_carrier_ts
@@ -38,26 +38,26 @@ erDiagram
     }
 
     order_items {
-        varchar order_id PK FK
-        int order_item_id PK
-        varchar product_id
-        varchar seller_id
+        varchar(255) order_id PK,FK
+        int4 order_item_id PK
+        varchar(255) product_id
+        varchar(255) seller_id
         timestamp shipping_limit_date
         numeric price
         numeric delivery_cost
     }
 
     order_payments {
-        varchar order_id PK FK
-        int payment_sequential PK
-        varchar payment_type
-        int payment_installments
+        varchar(255) order_id PK,FK
+        int4 payment_sequential PK
+        varchar(50) payment_type
+        int4 payment_installments
     }
 
     order_reviews {
-        varchar review_id PK
-        varchar order_id PK FK
-        int review_score
+        varchar(255) review_id PK
+        varchar(255) order_id PK,FK
+        int4 review_score
         timestamp review_creation_date
         timestamp review_answer_timestamp
     }
